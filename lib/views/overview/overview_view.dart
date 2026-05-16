@@ -3,6 +3,7 @@ library overview;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:oasx/api/api_client.dart';
 import 'package:oasx/component/log/log_mixin.dart';
 import 'package:oasx/component/log/log_widget.dart';
 import 'package:oasx/model/script_model.dart';
@@ -84,7 +85,23 @@ class _WaitingWidget extends StatelessWidget {
       Expanded(child: Obx(() {
         return ListView.builder(
             itemBuilder: (context, index) =>
-                TaskItemView(controller.scriptModel.waitingTaskList[index]),
+                TaskItemView(
+                  controller.scriptModel.waitingTaskList[index],
+                  onRunNow: () => controller.runTaskNow(
+                    controller.scriptModel.waitingTaskList[index].taskName,
+                  ),
+                  onWaitNow: () => controller.waitTaskOneHour(
+                    controller.scriptModel.waitingTaskList[index].taskName,
+                  ),
+                  isRunningNow: controller.isTaskActionRunning(
+                    controller.scriptModel.waitingTaskList[index].taskName,
+                    'run',
+                  ),
+                  isWaitingNow: controller.isTaskActionRunning(
+                    controller.scriptModel.waitingTaskList[index].taskName,
+                    'wait',
+                  ),
+                ),
             itemCount: controller.scriptModel.waitingTaskList.length);
       }))
     ]
@@ -115,7 +132,23 @@ class _PendingWidget extends StatelessWidget {
           child: Obx(() {
             return ListView.builder(
                 itemBuilder: (context, index) =>
-                    TaskItemView(controller.scriptModel.pendingTaskList[index]),
+                    TaskItemView(
+                      controller.scriptModel.pendingTaskList[index],
+                      onRunNow: () => controller.runTaskNow(
+                        controller.scriptModel.pendingTaskList[index].taskName,
+                      ),
+                      onWaitNow: () => controller.waitTaskOneHour(
+                        controller.scriptModel.pendingTaskList[index].taskName,
+                      ),
+                      isRunningNow: controller.isTaskActionRunning(
+                        controller.scriptModel.pendingTaskList[index].taskName,
+                        'run',
+                      ),
+                      isWaitingNow: controller.isTaskActionRunning(
+                        controller.scriptModel.pendingTaskList[index].taskName,
+                        'wait',
+                      ),
+                    ),
                 itemCount: controller.scriptModel.pendingTaskList.length);
           }))
     ]
@@ -140,7 +173,21 @@ class _RunningWidget extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium),
       const Divider(),
       Obx(() {
-        return TaskItemView(controller.scriptModel.runningTask.value);
+        return TaskItemView(
+          controller.scriptModel.runningTask.value,
+          onRunNow: () => controller
+              .runTaskNow(controller.scriptModel.runningTask.value.taskName),
+          onWaitNow: () => controller
+              .waitTaskOneHour(controller.scriptModel.runningTask.value.taskName),
+          isRunningNow: controller.isTaskActionRunning(
+            controller.scriptModel.runningTask.value.taskName,
+            'run',
+          ),
+          isWaitingNow: controller.isTaskActionRunning(
+            controller.scriptModel.runningTask.value.taskName,
+            'wait',
+          ),
+        );
       })
     ]
         .toColumn(crossAxisAlignment: CrossAxisAlignment.start)

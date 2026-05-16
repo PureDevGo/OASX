@@ -1,5 +1,6 @@
 import 'package:flutter_nb_net/flutter_net.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:dio_cache_interceptor_file_store/dio_cache_interceptor_file_store.dart';
 import 'package:oasx/api/api_interceptor.dart';
@@ -7,6 +8,7 @@ import 'package:oasx/api/api_interceptor.dart';
 import 'package:oasx/component/dio_http_cache/dio_http_cache.dart';
 import 'package:oasx/config/translation/i18n.dart';
 import 'package:oasx/config/translation/i18n_content.dart';
+import 'package:oasx/model/const/storage_key.dart';
 import 'package:oasx/utils/check_version.dart';
 import 'package:oasx/config/constants.dart';
 import 'package:oasx/controller/settings.dart';
@@ -33,13 +35,19 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
   ApiClient._internal() {
+    final storage = GetStorage();
+    address = storage.read(StorageKey.address.name) ?? address;
+
     NetOptions.instance
         .setConnectTimeout(const Duration(seconds: 3))
         .enableLogger(false)
         .addInterceptor(DioCacheInterceptor(
             options: CacheOptions(
-          store:
-              FileCacheStore(Get.find<SettingsController>().temporaryDirectory),
+          store: FileCacheStore(
+            Get.isRegistered<SettingsController>()
+                ? Get.find<SettingsController>().temporaryDirectory
+                : './',
+          ),
           policy: CachePolicy.request,
           hitCacheOnErrorExcept: [401, 403],
           maxStale: const Duration(days: 7),
@@ -50,10 +58,12 @@ class ApiClient {
         )))
         .addInterceptor(ApiInterceptor())
         .create();
+
+    setAddress('http://$address');
   }
 
   // http://$address 地址的前缀开头
-  String address = '127.0.0.1:22288';
+  String address = '127.0.0.1:22267';
 
   void setAddress(String address) {
     this.address = address;
@@ -235,6 +245,26 @@ class ApiClient {
       String scriptName, String taskName) async {
     final res = await request(() => get('/$scriptName/$taskName/args'));
     return res.data ?? {};
+  }
+
+  Future<bool> runScriptTaskNow(String scriptName, String taskName) async {
+    final encodedScriptName = Uri.encodeComponent(scriptName);
+    final encodedTaskName = Uri.encodeComponent(taskName);
+    final res = await request(() => post(
+          '/oasx/api/scripts/$encodedScriptName/tasks/$encodedTaskName/run',
+        ));
+    return res.isSuccess;
+  }
+
+  Future<bool> delayScriptTaskTo(
+      String scriptName, String taskName, DateTime target) async {
+    final res = await request(() => put(
+          '/$scriptName/$taskName/sync_next_run',
+          queryParameters: {
+            'target_dt': target.toLocal().toString().split('.').first,
+          },
+        ));
+    return res.isSuccess && res.data == true;
   }
 
   Future<bool> putScriptArg(

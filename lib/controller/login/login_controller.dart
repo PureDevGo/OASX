@@ -2,6 +2,7 @@ part of login;
 
 class LoginController extends GetxController {
   static bool logined = false;
+  static const defaultAddress = '127.0.0.1:22267';
   var username = ''.obs;
   var password = ''.obs;
   var address = ''.obs;
@@ -12,7 +13,7 @@ class LoginController extends GetxController {
   Future<void> onInit() async {
     username.value = storage.read(StorageKey.username.name) ?? "";
     password.value = storage.read(StorageKey.password.name) ?? "";
-    address.value = storage.read(StorageKey.address.name) ?? "";
+    address.value = storage.read(StorageKey.address.name) ?? defaultAddress;
 
     if (address.value.isNotEmpty && !logined) {
       logined = true;
