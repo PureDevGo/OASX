@@ -2,5 +2,5 @@ name = "oasx"
 compatibility_date = "2026-05-20"
 
 [assets]
-directory = "./OASX/"
+directory = "./"
 not_found_handling = "single-page-application"
