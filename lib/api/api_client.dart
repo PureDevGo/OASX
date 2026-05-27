@@ -247,16 +247,7 @@ class ApiClient {
     return res.data ?? {};
   }
 
-  Future<bool> runScriptTaskNow(String scriptName, String taskName) async {
-    final encodedScriptName = Uri.encodeComponent(scriptName);
-    final encodedTaskName = Uri.encodeComponent(taskName);
-    final res = await request(() => post(
-          '/oasx/api/scripts/$encodedScriptName/tasks/$encodedTaskName/run',
-        ));
-    return res.isSuccess;
-  }
-
-  Future<bool> delayScriptTaskTo(
+  Future<bool> syncScriptTaskNextRun(
       String scriptName, String taskName, DateTime target) async {
     final res = await request(() => put(
           '/$scriptName/$taskName/sync_next_run',

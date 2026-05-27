@@ -31,34 +31,41 @@ class OverviewController extends GetxController with LogMixin {
       taskActionState[taskName] == action;
 
   Future<void> runTaskNow(String taskName) async {
-    if (taskName.isEmpty || taskActionState.containsKey(taskName)) return;
-
-    taskActionState[taskName] = 'run';
-    try {
-      final success = await ApiClient().runScriptTaskNow(name, taskName);
-      if (success) {
-        Get.snackbar(I18n.tip.tr, '立即执行已加入队列');
-        await scriptService.wsService.send(name, 'get_schedule');
-      } else {
-        Get.snackbar(I18n.network_error.tr, '立即执行失败');
-      }
-    } finally {
-      taskActionState.remove(taskName);
-    }
+    await syncTaskNextRun(taskName, 'run', DateTime.now());
   }
 
   Future<void> waitTaskOneHour(String taskName) async {
+    await syncTaskNextRun(
+      taskName,
+      'wait',
+      DateTime.now().add(const Duration(hours: 1)),
+    );
+  }
+
+  Future<void> syncTaskNextRun(
+    String taskName,
+    String action,
+    DateTime target,
+  ) async {
     if (taskName.isEmpty || taskActionState.containsKey(taskName)) return;
 
-    taskActionState[taskName] = 'wait';
+    taskActionState[taskName] = action;
     try {
-      final target = DateTime.now().add(const Duration(hours: 1));
-      final success = await ApiClient().delayScriptTaskTo(name, taskName, target);
+      final success = await ApiClient().syncScriptTaskNextRun(
+        name,
+        taskName,
+        target,
+      );
       if (success) {
-        Get.snackbar(I18n.tip.tr, '已延后 1 小时');
+        final message = action == 'run'
+            ? 'Task queued for immediate run'
+            : 'Delayed by 1 hour';
+        Get.snackbar(I18n.tip.tr, message);
         await scriptService.wsService.send(name, 'get_schedule');
       } else {
-        Get.snackbar(I18n.network_error.tr, '立即等待失败');
+        final message =
+            action == 'run' ? 'Run now failed' : 'Wait now failed';
+        Get.snackbar(I18n.network_error.tr, message);
       }
     } finally {
       taskActionState.remove(taskName);

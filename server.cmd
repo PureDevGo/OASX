@@ -1,2 +1,2 @@
-cd /d D:\work\oas\ai\OASX\build\web
-python -m http.server 8080
+cd build\web
+py -m http.server 8080
